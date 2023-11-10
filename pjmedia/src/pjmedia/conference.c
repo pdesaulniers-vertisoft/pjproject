@@ -1854,6 +1854,11 @@ static pj_status_t write_port(pjmedia_conf *conf, struct conf_port *cport,
 static pj_status_t get_frame(pjmedia_port *this_port, 
 			     pjmedia_frame *frame)
 {
+	static unsigned int frames_counter = 0;
+	frames_counter++;
+
+	const bool must_log_level_adjustment = frames_counter % 500 == 0;
+
     pjmedia_conf *conf = (pjmedia_conf*) this_port->port_data.pdata;
     pjmedia_frame_type speaker_frame_type = PJMEDIA_FRAME_TYPE_NONE;
     unsigned ci, cj, i, j;
@@ -1972,7 +1977,12 @@ static pj_status_t get_frame(pjmedia_port *this_port,
 	/* Adjust the RX level from this port
 	 * and calculate the average level at the same time.
 	 */
+	 
 	if (conf_port->rx_adj_level != NORMAL_LEVEL) {
+		if (must_log_level_adjustment) {
+			PJ_LOG(3, (__FILENAME__, "get_frame()   applying rx level adjustment (%d)", conf_port->rx_adj_level));
+		}
+
 	    for (j=0; j<conf->samples_per_frame; ++j) {
 		/* For the level adjustment, we need to store the sample to
 		 * a temporary 32bit integer value to avoid overflowing the
@@ -1996,8 +2006,12 @@ static pj_status_t get_frame(pjmedia_port *this_port,
 		level += (p_in[j]>=0? p_in[j] : -p_in[j]);
 	    }
 	} else {
+		if (must_log_level_adjustment) {
+			PJ_LOG(3, (__FILENAME__, "get_frame()   rx level adjustment will not be applied since it is equal to the default value NORMAL_LEVEL (%d)", NORMAL_LEVEL));
+		}
+
 	    for (j=0; j<conf->samples_per_frame; ++j) {
-		level += (p_in[j]>=0? p_in[j] : -p_in[j]);
+			level += (p_in[j]>=0? p_in[j] : -p_in[j]);
 	    }
 	}
 
@@ -2032,6 +2046,11 @@ static pj_status_t get_frame(pjmedia_port *this_port,
 
 	    /* apply connection level, if not normal */
 	    if (conf_port->listener_adj_level[cj] != NORMAL_LEVEL) {
+
+		if (must_log_level_adjustment) {
+			PJ_LOG(3, (__FILENAME__, "get_frame()   applying listener level adjustment (%d)", conf_port->listener_adj_level[cj]));
+		}
+
 		unsigned k = 0;
 		for (; k < conf->samples_per_frame; ++k) {
 		    /* For the level adjustment, we need to store the sample to
@@ -2058,6 +2077,10 @@ static pj_status_t get_frame(pjmedia_port *this_port,
 		/* take the leveled frame */
 		p_in_conn_leveled = conf_port->adj_level_buf;
 	    } else {
+		if (must_log_level_adjustment) {
+			PJ_LOG(3, (__FILENAME__, "get_frame()  listener level adjustment will not be applied since it is equal to the default value NORMAL_LEVEL (%d)", NORMAL_LEVEL));
+		}
+
 		/* take the frame as-is */
 		p_in_conn_leveled = p_in;
 	    }
@@ -2096,6 +2119,10 @@ static pj_status_t get_frame(pjmedia_port *this_port,
 		 * just copy the samples to the mix buffer
 		 * no mixing and level adjustment needed
 		 */
+		if (must_log_level_adjustment) {
+			PJ_LOG(3, (__FILENAME__, "get_frame()  only 1 transmitter; no mixing and level adjustment needed"));
+		}
+
 		unsigned k, samples_per_frame = conf->samples_per_frame;
 
 		for (k = 0; k < samples_per_frame; ++k) {
