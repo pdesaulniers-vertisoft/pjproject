@@ -31,7 +31,13 @@
 #include <pj/log.h>
 #include <pj/pool.h>
 #include <pj/string.h>
+
 #include <stdbool.h>
+#include <string.h>
+
+#ifndef __FILENAME__
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#endif
 
 #if !defined(PJMEDIA_CONF_USE_SWITCH_BOARD) || PJMEDIA_CONF_USE_SWITCH_BOARD==0
 
