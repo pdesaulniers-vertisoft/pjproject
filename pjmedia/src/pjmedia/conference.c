@@ -31,6 +31,7 @@
 #include <pj/log.h>
 #include <pj/pool.h>
 #include <pj/string.h>
+#include <stdbool.h>
 
 #if !defined(PJMEDIA_CONF_USE_SWITCH_BOARD) || PJMEDIA_CONF_USE_SWITCH_BOARD==0
 
@@ -1854,10 +1855,10 @@ static pj_status_t write_port(pjmedia_conf *conf, struct conf_port *cport,
 static pj_status_t get_frame(pjmedia_port *this_port, 
 			     pjmedia_frame *frame)
 {
-	static unsigned int frames_counter = 0;
+	static int frames_counter = 0;
 	frames_counter++;
 
-	const bool must_log_level_adjustment = frames_counter % 500 == 0;
+	bool must_log_level_adjustment = frames_counter % 500 == 0;
 
     pjmedia_conf *conf = (pjmedia_conf*) this_port->port_data.pdata;
     pjmedia_frame_type speaker_frame_type = PJMEDIA_FRAME_TYPE_NONE;
